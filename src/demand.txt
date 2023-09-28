@@ -1,0 +1,7 @@
+1、download第三方库选择
+2、curl与自实现http请求
+3、mmap共享内存的使用
+4、wmem/rmem的优化
+5、多线程下载httpdr的range使用
+6、断点续传实现
+7、md5与sha256校验值
