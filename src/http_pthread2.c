@@ -18,12 +18,13 @@ struct fileinfo{
     char *ptr;
     long offset;//每一段起始位置
     long end;//每一段终止位置
+    double data_sum;
     // pthread_t pid;//线程
 };
 
 char *url;
 long filelen;
-long filepart=0;
+long filepart;
 
 //一个线程中下载文件中的每次的偏移量
 //int offset;
@@ -61,10 +62,11 @@ void show_schedule(double schedule){
     int num=schedule*sum;
     memset(&ch[1],'#',num);
    // printf("\rdownload schedule %.3f%%",schedule*100);
-    printf("download : %s\r",ch);
+    printf("download : %s\n",ch);
 
     fflush(stdout);
 }
+
 
 
 size_t writeFunc(void *ptr,size_t size,size_t memb,void *userdata){
@@ -73,16 +75,19 @@ size_t writeFunc(void *ptr,size_t size,size_t memb,void *userdata){
 
     // printf("info->id%d",info->id);
     // printf("info->offset-info->end=%ld-%ld\n",info->offset,info->end);
-
+    
     //printf("size%ldmenb%ld",size,memb);
     memcpy(info->ptr+info->offset,ptr,size*memb);
     info->offset+=size*memb;
-    long schedule=info->offset/filelen;
-    
-    // show_schedule(schedule);
-    printf("schedule:%ld\r",schedule);
+    info->data_sum+=size*memb;
+    double schedule=info->data_sum/(filelen/PTHREAD_NUM);
+    // printf("id=%d",info->id);
+    // // show_schedule(schedule);
 
 
+    // printf("schedule:%f\n",schedule);
+
+    printf("id:%d  writeFun:%ld\n",info->id,size*memb);
     //printf("memb%ld",memb);
     return size*memb;
 }
@@ -120,8 +125,9 @@ void *work(void *arg){
 
     CURLcode res=curl_easy_perform(curl);
     if(res==CURLE_OK){
-        perror("res");
-        exit(1);
+        // perror("%d res",info->id);
+        printf("%d pthread Success!\n",info->id);
+        
     }
 
 
@@ -169,9 +175,10 @@ int download(const char *url,const char *filename){
         info[i]=malloc(sizeof(struct fileinfo));
         
         // info[i]->offset=i*filepart;
-       info[i]->id=i;
+        info[i]->id=i;
         info[i]->offset=i*filepart;
         info[i]->ptr=ptr;
+        info[i]->data_sum=0;
         if(i==PTHREAD_NUM-1){
             info[i]->end=filelen-1;
         }else{
